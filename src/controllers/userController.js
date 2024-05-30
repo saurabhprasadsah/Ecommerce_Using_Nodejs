@@ -1,17 +1,42 @@
 const RoomBooked = require('../models/User');
 const winston = require('winston');
+require('winston-daily-rotate-file');
+
+// Define Winston transports
+const transport = new winston.transports.DailyRotateFile({
+    filename: 'logs/error.log',
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '14d'
+});
+
+const logger = winston.createLogger({
+    level: 'error',
+    format: winston.format.combine(
+        winston.format.timestamp({
+            format: 'YYYY-MM-DD HH:mm:ss'
+        }),
+        winston.format.errors({ stack: true }),
+        winston.format.splat(),
+        winston.format.json()
+    ),
+    transports: [
+        new winston.transports.Console(),
+        transport
+    ]
+});
 
 exports.registerUser = async (req, resp) => {
     try {
         const { roomNo, date, email } = req.body;
 
-
+        // Check if the user with the email already exists
         const existingUser = await RoomBooked.findOne({ email });
         if (existingUser) {
             console.log('Email is already registered');
             return resp.status(409).send('Email is already registered try another email id');
         }
-
 
         // Parse and validate the date
         const bookingDate = new Date(date);
@@ -40,9 +65,9 @@ exports.registerUser = async (req, resp) => {
             console.log('User already registered');
             resp.status(409).send('User already registered');
         }
-    } catch (e) {
-        console.error(e);
-        winston.error('Error during registration', e);
+    } catch (error) {
+        console.error(error);
+        logger.error('Error during registration', error); // Log the error using Winston
         resp.status(500).send('Something Went Wrong');
     }
 };
@@ -53,7 +78,7 @@ exports.getRoomData = async (req, resp) => {
         resp.send(details);
     } catch (error) {
         console.error(error);
-        winston.error('Error fetching room data', error);
+        logger.error('Error fetching room data', error);
         resp.status(500).send('Error fetching room data');
     }
 };
