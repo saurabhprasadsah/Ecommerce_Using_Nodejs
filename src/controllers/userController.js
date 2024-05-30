@@ -1,31 +1,5 @@
 const RoomBooked = require('../models/User');
-const winston = require('winston');
-require('winston-daily-rotate-file');
 
-// Define Winston transports
-const transport = new winston.transports.DailyRotateFile({
-    filename: 'logs/error.log',
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxSize: '20m',
-    maxFiles: '14d'
-});
-
-const logger = winston.createLogger({
-    level: 'error',
-    format: winston.format.combine(
-        winston.format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss'
-        }),
-        winston.format.errors({ stack: true }),
-        winston.format.splat(),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.Console(),
-        transport
-    ]
-});
 
 exports.registerUser = async (req, resp) => {
     try {
@@ -72,13 +46,45 @@ exports.registerUser = async (req, resp) => {
     }
 };
 
+
 exports.getRoomData = async (req, resp) => {
     try {
-        const details = await RoomBooked.find({});
-        resp.send(details);
+        const { date } = req.body;
+
+        // Parse and validate the date
+        const bookingDate = new Date(date);
+        if (isNaN(bookingDate.getTime())) {
+            console.log('Invalid date format');
+            return resp.status(400).send('Invalid date format');
+        }
+        bookingDate.setHours(0, 0, 0, 0);
+
+        // Find all booked rooms for the specified date
+        const bookedRooms = await RoomBooked.find({ date: bookingDate });
+
+        // Find all rooms
+        const allRooms = await RoomBooked.find({});
+
+        // Filter out the available rooms by comparing booked rooms
+        const availableRooms = allRooms.filter(room => {
+            return !bookedRooms.some(bookedRoom => bookedRoom.roomNo === room.roomNo);
+        });
+
+        resp.send(availableRooms);
     } catch (error) {
         console.error(error);
-        logger.error('Error fetching room data', error);
         resp.status(500).send('Error fetching room data');
     }
 };
+
+
+// exports.getRoomData = async (req, resp) => {
+//     try {
+//         const details = await RoomBooked.find({});
+//         resp.send(details);
+//     } catch (error) {
+//         console.error(error);
+//         // logger.error('Error fetching room data', error);
+//         resp.status(500).send('Error fetching room data');
+//     }
+// };
