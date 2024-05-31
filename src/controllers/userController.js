@@ -1,6 +1,5 @@
 const RoomBooked = require('../models/User');
 
-
 exports.registerUser = async (req, resp) => {
     try {
         const { roomNo, date, email } = req.body;
@@ -47,35 +46,7 @@ exports.registerUser = async (req, resp) => {
 };
 
 
-// exports.getRoomData = async (req, resp) => {
-//     try {
-//         const { date } = req.body;
 
-//         // Parse and validate the date
-//         const bookingDate = new Date(date);
-//         if (isNaN(bookingDate.getTime())) {
-//             console.log('Invalid date format');
-//             return resp.status(400).send('Invalid date format');
-//         }
-//         bookingDate.setHours(0, 0, 0, 0);
-
-//         // Find all booked rooms for the specified date
-//         const bookedRooms = await RoomBooked.find({ date: bookingDate });
-
-//         // Find all rooms
-//         const allRooms = await RoomBooked.find({});
-
-//         // Filter out the available rooms by comparing booked rooms
-//         const availableRooms = allRooms.filter(room => {
-//             return !bookedRooms.some(bookedRoom => bookedRoom.roomNo === room.roomNo);
-//         });
-
-//         resp.send(availableRooms);
-//     } catch (error) {
-//         console.error(error);
-//         resp.status(500).send('Error fetching room data');
-//     }
-// };
 
 
 exports.getRoomData = async (req, resp) => {
